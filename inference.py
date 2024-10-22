@@ -66,6 +66,8 @@ class GeoFormer():
             show = cv2.drawMatches((gray1.cpu()[0][0].numpy() * 255).astype(np.uint8), kp0,
                                    (gray2.cpu()[0][0].numpy() * 255).astype(np.uint8), kp1, matches,
                                    None)
+            #zhaifang add 
+            cv2.imwrite('matched_image.jpg', show)
             plt.imshow(show)
             plt.show()
         if is_draw:
@@ -95,8 +97,10 @@ class GeoFormer():
 
         if cpu:
             self.change_deivce(tmp_device)
-
+        print("matches:", matches)
+        print("keyPoints:", kpts1, kpts2)
+        print("Scores:", scores)
         return matches, kpts1, kpts2, scores
 
-g = GeoFormer(640, 0.2, no_match_upscale=False, ckpt='saved_ckpt/geoformer.ckpt', device='cuda')
-g.match_pairs('/data3/ljz/matching/data/datasets/copy/query/106_2.jpg', '/data3/ljz/matching/data/datasets/copy/refer/106_1.jpg', is_draw=True)
+g = GeoFormer(1440, 0.2, no_match_upscale=False, ckpt='saved_ckpt/geoformer.ckpt', device='cuda')
+g.match_pairs('./data/test/000403.png', './data/test/frame_000402.png', is_draw=True)
