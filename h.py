@@ -76,7 +76,7 @@ class GeoFormer():
         matches = np.concatenate([kpts1, kpts2], axis=1)
         return matches, kpts1, kpts2, scores
 
-    def match_pairs(self, im1_path, im2_path, cpu=False, is_draw=False):
+    def match_pairs(self, im1_path, im2_path, cpu=False, is_draw=False, npy_file=None, output_file=None):
         torch.cuda.empty_cache()
         tmp_device = self.device
         if cpu:
@@ -124,7 +124,41 @@ class GeoFormer():
         print("Scores:", sorted_scores)
         print("Homography matrix:", homography)
         print("Homography matrix inv:", homography_inv)
+        if npy_file and output_file and homography is not None:
+            self.map_points_and_save_image(npy_file, im1_path, homography_inv, output_file)
         return best_matches, best_kpts1, best_kpts2, sorted_scores, homography, homography_inv
 
+    def map_points_and_save_image(self, npy_file, image_file, H, output_file):
+        # Load DVS data from the npy file
+        dvs_points = np.load(npy_file, allow_pickle=True)
+
+        # Extract x and y coordinates from dvs_points
+        x_coords = dvs_points['x'].astype(np.float32)
+        y_coords = dvs_points['y'].astype(np.float32)
+        p_values = dvs_points['p'].astype(np.float32)
+
+        # Round x and y coordinates
+        x_coords = np.round(x_coords).astype(np.float32)  # Ensure float32 for perspectiveTransform
+        y_coords = np.round(y_coords).astype(np.float32)  # Ensure float32 for perspectiveTransform
+
+        # Create a regular NumPy array for the points
+        dvs_points_extracted = np.column_stack((x_coords, y_coords)).astype(np.float32)  # Ensure float32
+
+        # Map DVS points using the homography matrix H
+        mapped_points = cv2.perspectiveTransform(dvs_points_extracted.reshape(-1, 1, 2), H)
+
+        # Load the target image
+        target_image = cv2.imread(image_file)
+
+        # Draw the mapped points on the target image
+        for point, p in zip(mapped_points, p_values):
+            x, y = int(point[0][0]), int(point[0][1])
+            if 0 <= x < target_image.shape[1] and 0 <= y < target_image.shape[0]:  # Check bounds
+                color = (255, 0, 0) if p == 1 else (0, 0, 225)
+                cv2.circle(target_image, (x, y), 1, color, -1)
+
+        # Save the resulting image
+        cv2.imwrite(output_file, target_image)
+
 g = GeoFormer(1440, 0.2, no_match_upscale=False, ckpt='saved_ckpt/geoformer.ckpt', device='cuda')
-g.match_pairs('./data/test/000403.png', './data/test/frame_000402.png', is_draw=True)
+g.match_pairs('./data/test/000403.png', './data/test/frame_000402.png', is_draw=True, npy_file='./data/test/000402.npy', output_file="mapped_image.jpg")
