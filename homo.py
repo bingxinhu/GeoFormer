@@ -51,8 +51,8 @@ class GeoFormer():
         kpts2 = batch['mkpts1_f'].cpu().numpy()
 
         def draw():
-            import matplotlib.pyplot as plt
-            plt.figure(dpi=200)
+            #import matplotlib.pyplot as plt
+            #plt.figure(dpi=200)
             kp0 = kpts1
             kp1 = kpts2
             kp0 = [cv2.KeyPoint(int(k[0]), int(k[1]), 30) for k in kp0]
@@ -60,9 +60,9 @@ class GeoFormer():
             matches = [cv2.DMatch(_trainIdx=i, _queryIdx=i, _distance=1, _imgIdx=-1) for i in range(len(kp0))]
             show = cv2.drawMatches((gray1.cpu()[0][0].numpy() * 255).astype(np.uint8), kp0,
                                    (gray2.cpu()[0][0].numpy() * 255).astype(np.uint8), kp1, matches, None)
-            cv2.imwrite('matched_image.jpg', show)
-            plt.imshow(show)
-            plt.show()
+            #cv2.imwrite('matched_image.jpg', show)
+            #plt.imshow(show)
+            #plt.show()
 
         if is_draw:
             draw()
@@ -103,7 +103,7 @@ class GeoFormer():
 
         if self.no_match_upscale:
             if npy_file and output_file and homography is not None:
-                self.map_points_and_save_image(npy_file, im1_path, homography, output_file)
+                self.map_points_and_save_image(npy_file, im1_path, homography_inv, output_file)
             return best_matches, best_kpts1, best_kpts2, sorted_scores, upscale.squeeze(0), homography, homography_inv
 
         best_matches = upscale * best_matches
@@ -114,7 +114,7 @@ class GeoFormer():
             self.change_device(tmp_device)
 
         if npy_file and output_file and homography is not None:
-            self.map_points_and_save_image(npy_file, im1_path, homography, output_file)
+            self.map_points_and_save_image(npy_file, im1_path, homography_inv, output_file)
 
         return best_matches, best_kpts1, best_kpts2, sorted_scores, homography, homography_inv
 
@@ -137,10 +137,14 @@ class GeoFormer():
             if 0 <= x < target_image.shape[1] and 0 <= y < target_image.shape[0]:
                 color = (255, 0, 0) if p == 1 else (0, 0, 225)
                 cv2.circle(target_image, (x, y), 1, color, -1)
-
+        print("output write:", output_file)
         cv2.imwrite(output_file, target_image)
 
 def process_directory(base_dir):
+    # 创建 mapped_images 目录（如果不存在的话）
+    output_dir = os.path.join(base_dir, 'mapped_images')
+    os.makedirs(output_dir, exist_ok=True)
+
     raw_frame_dir = os.path.join(base_dir, 'raw_frame')
     reconstruction_dir = os.path.join(base_dir, 'ImageRecons/reconstruction')
     time_split_dir = os.path.join(base_dir, 'time_split')
@@ -150,12 +154,12 @@ def process_directory(base_dir):
     npy_files = sorted(os.listdir(time_split_dir))
 
     for i in range(len(image_files)):
-        if image_files[i].endswith('.png') and recon_files[i].endswith('.png') and npy_files[i].endswith('.npy'):
-            im1_path = os.path.join(raw_frame_dir, image_files[i])
+        if image_files[i+1].endswith('.png') and recon_files[i].endswith('.png') and npy_files[i-1].endswith('.npy'):
+            im1_path = os.path.join(raw_frame_dir, image_files[i+1])
             im2_path = os.path.join(reconstruction_dir, recon_files[i])
-            npy_file = os.path.join(time_split_dir, npy_files[i])
+            npy_file = os.path.join(time_split_dir, npy_files[i-1])
             output_file = os.path.join(base_dir, 'mapped_images', f'mapped_image_{i:03d}.jpg')
-
+            print(i, image_files[i], recon_files[i], npy_files[i-1], output_file)
             g.match_pairs(im1_path, im2_path, is_draw=True, npy_file=npy_file, output_file=output_file)
 
 def main():
