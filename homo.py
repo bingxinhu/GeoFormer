@@ -154,8 +154,8 @@ def process_directory(base_dir):
     npy_files = sorted(os.listdir(time_split_dir))
 
     for i in range(len(image_files)):
-        if image_files[i+1].endswith('.png') and recon_files[i].endswith('.png') and npy_files[i-1].endswith('.npy'):
-            im1_path = os.path.join(raw_frame_dir, image_files[i+1])
+        if image_files[i].endswith('.png') and recon_files[i].endswith('.png') and npy_files[i-1].endswith('.npy'):
+            im1_path = os.path.join(raw_frame_dir, image_files[i])
             im2_path = os.path.join(reconstruction_dir, recon_files[i])
             npy_file = os.path.join(time_split_dir, npy_files[i-1])
             output_file = os.path.join(base_dir, 'mapped_images', f'mapped_image_{i:03d}.jpg')
