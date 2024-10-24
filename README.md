@@ -12,7 +12,7 @@ We used Anaconda to setup a deep learning workspace that supports PyTorch. Run t
 ``` conda
 conda create -n GeoFormer python==3.8 -y
 conda activate GeoFormer
-git clone https://github.com/ruc-aimc-lab/GeoFormer.git
+git clone git@github.com:bingxinhu/GeoFormer.git
 cd GeoFormer
 pip install -r requirements.txt
 ```
