@@ -97,12 +97,14 @@ class GeoFormer():
         if len(best_kpts1) >= 4:
             homography, _ = cv2.findHomography(best_kpts1, best_kpts2, cv2.RANSAC)
             homography_inv, _ = cv2.findHomography(best_kpts2, best_kpts1, cv2.RANSAC)
+            np.save('homography.npy', homography)
+            np.save('homography_inv.npy', homography_inv)
         else:
             homography = None
             homography_inv = None
 
         if self.no_match_upscale:
-            if npy_file and output_file and homography is not None:
+            if npy_file and output_file and homography_inv is not None:
                 self.map_points_and_save_image(npy_file, im1_path, homography_inv, output_file)
             return best_matches, best_kpts1, best_kpts2, sorted_scores, upscale.squeeze(0), homography, homography_inv
 
@@ -113,7 +115,7 @@ class GeoFormer():
         if cpu:
             self.change_device(tmp_device)
 
-        if npy_file and output_file and homography is not None:
+        if npy_file and output_file and homography_inv is not None:
             self.map_points_and_save_image(npy_file, im1_path, homography_inv, output_file)
 
         return best_matches, best_kpts1, best_kpts2, sorted_scores, homography, homography_inv
