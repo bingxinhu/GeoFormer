@@ -97,7 +97,7 @@ python -m lightning/train_homo_geoformer
 ```
 
 ### Inference
-
+python homo.py /data/brain_inspired_dataset_szp/Brain_Inspired_Database/Dataset/Brain_Inspired_Datasets/Add_High/24_06_06_zip/24_06_06/output_01 
 #### Homography Estimation Performance
 
 Our evaluation code is implemented based on the foundation of this benchmark.
