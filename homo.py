@@ -71,7 +71,7 @@ class GeoFormer():
         matches = np.concatenate([kpts1, kpts2], axis=1)
         return matches, kpts1, kpts2, scores
 
-    def match_pairs(self, im1_path, im2_path, cpu=False, is_draw=False, npy_file=None, output_file=None):
+    def match_pairs(self, im1_path, im2_path, cpu=False, is_draw=False, npy_file=None, output_file=None, h_dir=None):
         torch.cuda.empty_cache()
         tmp_device = self.device
         if cpu:
@@ -97,8 +97,13 @@ class GeoFormer():
         if len(best_kpts1) >= 4:
             homography, _ = cv2.findHomography(best_kpts1, best_kpts2, cv2.RANSAC)
             homography_inv, _ = cv2.findHomography(best_kpts2, best_kpts1, cv2.RANSAC)
-            np.save('homography.npy', homography)
-            np.save('homography_inv.npy', homography_inv)
+            # Extract base names for saving
+            im1_base = os.path.basename(im1_path).split('.')[0]
+            im2_base = os.path.basename(im2_path).split('.')[0]
+
+            # Save homography matrices with paired file names in the specified directory
+            np.save(os.path.join(h_dir, f'homography_{im1_base}_{im2_base}.npy'), homography)
+            np.save(os.path.join(h_dir, f'homography_inv_{im1_base}_{im2_base}.npy'), homography_inv)
         else:
             homography = None
             homography_inv = None
@@ -139,13 +144,14 @@ class GeoFormer():
             if 0 <= x < target_image.shape[1] and 0 <= y < target_image.shape[0]:
                 color = (255, 0, 0) if p == 1 else (0, 0, 225)
                 cv2.circle(target_image, (x, y), 1, color, -1)
-        print("output write:", output_file)
         cv2.imwrite(output_file, target_image)
 
 def process_directory(base_dir):
     # 创建 mapped_images 目录（如果不存在的话）
     output_dir = os.path.join(base_dir, 'mapped_images')
     os.makedirs(output_dir, exist_ok=True)
+    h_dir = os.path.join(base_dir, 'homo_matrix')
+    os.makedirs(h_dir, exist_ok=True)
 
     raw_frame_dir = os.path.join(base_dir, 'raw_frame')
     reconstruction_dir = os.path.join(base_dir, 'ImageRecons/reconstruction')
@@ -162,7 +168,7 @@ def process_directory(base_dir):
             npy_file = os.path.join(time_split_dir, npy_files[i-1])
             output_file = os.path.join(base_dir, 'mapped_images', f'mapped_image_{i:03d}.jpg')
             print(i, image_files[i], recon_files[i], npy_files[i-1], output_file)
-            g.match_pairs(im1_path, im2_path, is_draw=True, npy_file=npy_file, output_file=output_file)
+            g.match_pairs(im1_path, im2_path, is_draw=True, npy_file=npy_file, output_file=output_file, h_dir=h_dir)
 
 def main():
     parser = argparse.ArgumentParser(description='Process image pairs and DVS data.')
