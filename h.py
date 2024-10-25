@@ -94,7 +94,7 @@ class GeoFormer():
         sorted_scores = scores[indices]
 
         # Determine a threshold for the best matches
-        threshold = 0.6  # Adjust based on your needs
+        threshold = 0.4  # Adjust based on your needs
         best_matches = sorted_matches[sorted_scores > threshold]
         best_kpts1 = sorted_kpts1[sorted_scores > threshold]
         best_kpts2 = sorted_kpts2[sorted_scores > threshold]
