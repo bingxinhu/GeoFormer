@@ -161,4 +161,4 @@ class GeoFormer():
         cv2.imwrite(output_file, target_image)
 
 g = GeoFormer(1440, 0.2, no_match_upscale=False, ckpt='saved_ckpt/geoformer.ckpt', device='cuda')
-g.match_pairs('/media/HDD1/dual_modality_datasets/output_2/raw_frame/000334.png', '/media/HDD1/dual_modality_datasets/output_2/ImageRecons/reconstruction/frame_0000000333.png', is_draw=True, npy_file='/media/HDD1/dual_modality_datasets/output_2/time_split/000333.npy', output_file="mapped_image.jpg")
+g.match_pairs('/media/HDD1/dual_modality_datasets/output_2/raw_frame/000134.png', '/media/HDD1/dual_modality_datasets/output_2/ImageRecons/reconstruction/frame_0000000133.png', is_draw=True, npy_file='/media/HDD1/dual_modality_datasets/output_2/time_split/000133.npy', output_file="mapped_image.jpg")
