@@ -89,13 +89,14 @@ class GeoFormer():
         sorted_kpts2 = kpts2[indices]
         sorted_scores = scores[indices]
 
-        threshold = 0.1
+        threshold = 0.5  # 阈值选择
         best_matches = sorted_matches[sorted_scores > threshold]
         best_kpts1 = sorted_kpts1[sorted_scores > threshold]
         best_kpts2 = sorted_kpts2[sorted_scores > threshold]
 
         if len(best_kpts1) >= 4:
-            homography, _ = cv2.findHomography(best_kpts1, best_kpts2, cv2.RANSAC)
+            return best_kpts1, best_kpts2
+            homography, _ = cv2.findHomography(best_kpts1, best_kpts2, cv2.RANSAC)  # cv2.RANSAC会剔除错误点
             homography_inv, _ = cv2.findHomography(best_kpts2, best_kpts1, cv2.RANSAC)
             # Extract base names for saving
             im1_base = os.path.basename(im1_path).split('.')[0]
@@ -105,6 +106,7 @@ class GeoFormer():
             np.save(os.path.join(h_dir, f'homography_{im1_base}_{im2_base}.npy'), homography)
             np.save(os.path.join(h_dir, f'homography_inv_{im1_base}_{im2_base}.npy'), homography_inv)
         else:
+            return None, None
             homography = None
             homography_inv = None
 
@@ -160,15 +162,24 @@ def process_directory(base_dir):
     image_files = sorted(os.listdir(raw_frame_dir))
     recon_files = sorted(os.listdir(reconstruction_dir))
     npy_files = sorted(os.listdir(time_split_dir))
+    # print(len(image_files), len(recon_files), len(npy_files))
+    # print(recon_files[0:5]， recon_files[-5:])  # 第一个和最后一个不是重建图，中间的499个是重建图
 
+    pt1_list, pt2_list = [], []
     for i in range(len(image_files)):
         if image_files[i].endswith('.png') and recon_files[i].endswith('.png') and npy_files[i-1].endswith('.npy'):
+            # print('***', image_files[i], recon_files[i], npy_files[i-1], '***')  # 看起来配对关系无误
             im1_path = os.path.join(raw_frame_dir, image_files[i])
             im2_path = os.path.join(reconstruction_dir, recon_files[i])
             npy_file = os.path.join(time_split_dir, npy_files[i-1])
             output_file = os.path.join(base_dir, 'mapped_images', f'mapped_image_{i:03d}.jpg')
             print(i, image_files[i], recon_files[i], npy_files[i-1], output_file)
-            g.match_pairs(im1_path, im2_path, is_draw=True, npy_file=npy_file, output_file=output_file, h_dir=h_dir)
+            pt1, pt2 = g.match_pairs(im1_path, im2_path, is_draw=True, npy_file=npy_file, output_file=output_file, h_dir=h_dir)
+            if (pt1 is not None) and (pt2 is not None):
+                pt1_list.append(pt1)
+                pt2_list.append(pt2)
+    np.save(os.path.join(base_dir, "pt1_list_thre_0.5.npy"), np.array(pt1_list))
+    np.save(os.path.join(base_dir, "pt2_list_thre_0.5.npy"), np.array(pt2_list))
 
 def main():
     parser = argparse.ArgumentParser(description='Process image pairs and DVS data.')
